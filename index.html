@@ -1,181 +1,298 @@
-<!DOCTYPE html> <html lang="pt-BR"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>App Motorista</title> <style> body { font-family: Arial, sans-serif; background-color: #fff; color: #333; text-align: center; margin: 0; padding: 0; } header { background-color: #E67E22; padding: 15px; color: white; font-size: 20px; } .container { padding: 20px; } input, button { display: block; width: 90%; margin: 10px auto; padding: 10px; font-size: 16px; } button { background-color: #E67E22; color: white; border: none; cursor: pointer; } table { width: 100%; border-collapse: collapse; margin-top: 20px; } th, td { border: 1px solid #ddd; padding: 8px; text-align: center; } th { background-color: #E67E22; color: white; } .totais { margin-top: 20px; font-weight: bold; } #dashboard { margin-top: 20px; padding: 20px; border: 1px solid #ddd; } #exportPDFBtn { margin-top: 20px; background-color: #3498DB; } #myChart1, #myChart2 { max-width: 400px; margin: auto; } footer { background-color: #E67E22; color: white; padding: 10px; position: relative; bottom: 0; width: 100%; } .contribuir { margin-top: 10px; color: white; cursor: pointer; text-decoration: underline; } /* Estilização da tabela de totais */ .totais-table td:first-child { background-color: #E67E22; /* Cor de fundo laranja */ color: white; /* Cor da fonte branca */ text-align: left; /* Alinhamento à esquerda */ } </style> <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script> </head> <body> <header>App Motorista</header> <div class="container"> <h2>Controle de Ganhos</h2> <label for="data">Data:</label> <input type="date" id="data">
+<!DOCTYPE html>
+<html lang="pt-BR">
 
-    <label for="ganhos">Ganhos Diários (R$):</label>
-    <input type="number" id="ganhos" placeholder="Digite seus ganhos">
-
-    <label for="combustivel">Gasto com Combustível (R$):</label>
-    <input type="number" id="combustivel" placeholder="Digite os gastos">
-
-    <label for="kmRodado">KM Rodado:</label>
-    <input type="number" id="kmRodado" placeholder="Digite os quilômetros rodados">
-
-    <label for="manutencao">Percentual para Manutenção (%):</label>
-    <input type="number" id="manutencao" placeholder="Ex: 10">
-
-    <label for="metaGanhos">Meta de Ganhos (R$):</label>
-    <input type="number" id="metaGanhos" placeholder="Digite sua meta">
-
-    <button onclick="salvarDados()">Salvar</button>
-    <button onclick="resetarDados()">Resetar Tudo</button>
-    <button id="exportPDFBtn" onclick="exportarPDF()">Exportar como PDF</button>
-
-    <h2>Filtrar por Mês e Ano</h2>
-    <label for="filtrarAno">Ano:</label>
-    <input type="number" id="filtrarAno" value="${new Date().getFullYear()}" min="2020">
-    
-    <label for="filtrarMes">Mês:</label>
-    <select id="filtrarMes">
-        <option value="">Todos</option>
-    </select>
-    <button onclick="atualizarHistorico()">Filtrar</button>
-
-    <h2>Histórico de Ganhos</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Data</th>
-                <th>Ganhos</th>
-                <th>Combustível</th>
-                <th>KM Rodado</th>
-                <th>Valor Pago por KM (R$)</th> <!-- Nova coluna -->
-                <th>Manutenção</th>
-                <th>Lucro Líquido</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody id="historico">
-        </tbody>
-    </table>
-
-    <div class="totais">
-        <h3>Totais</h3>
-        <table class="totais-table">
-            <tbody>
-                <tr>
-                    <td>Total de Ganhos (R$):</td>
-                    <td><span id="totalGanhos">0.00</span></td>
-                </tr>
-                <tr>
-                    <td>Total de Gastos com Combustível (R$):</td>
-                    <td><span id="totalCombustivel">0.00</span></td>
-                </tr>
-                <tr>
-                    <td>Total de KM Rodado:</td>
-                    <td><span id="totalKmRodado">0.00</span></td>
-                </tr>
-                <tr>
-                    <td>Valor Pago por KM Rodado (R$):</td>
-                    <td><span id="valorPorKm">0.00</span></td>
-                </tr>
-                <tr>
-                    <td>Total de Manutenção (R$):</td>
-                    <td><span id="totalManutencao">0.00</span></td>
-                </tr>
-                <tr>
-                    <td>Total de Lucro Líquido (R$):</td>
-                    <td><span id="totalLucro">0.00</span></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div id="dashboard">
-        <h2>Dashboard</h2>
-        <p>Progresso Metas de Ganhos: <span id="progressoMeta">0.00</span></p>
-        <p>Gastos Mensais: <span id="gastosMensais">0.00</span></p>
-        <canvas id="myChart1"></canvas> <!-- Gráfico Circular -->
-        <canvas id="myChart2"></canvas> <!-- Gráfico de Barras -->
-    </div>
-</div>
-
-<footer>
-    <p>Desenvolvido por Rodolfo Oliveira - Todos os direitos reservados - 2025</p>
-    <p><a href="https://wa.me/5514997792544" style="color: white;">Contato via WhatsApp: (14) 99779-2544</a></p>
-    <p class="contribuir" onclick="mostrarChavePIX()">Contribua com o app clicando aqui!</p>
-</footer>
-
-<script>
-    let myChart1;
-    let myChart2;
-
-    document.addEventListener('DOMContentLoaded', () => {
-        inserirMeses();
-        atualizarHistorico();
-        calcularTotais();
-        calcularDashboard();
-        atualizarGraficos();
-        carregarMeta();
-    });
-
-    function inserirMeses() {
-        const mesSelect = document.getElementById('filtrarMes');
-        const meses = [
-            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-        ];
-
-        meses.forEach((mes, index) => {
-            const option = document.createElement('option');
-            option.value = index + 1; // O valor corresponde ao número do mês (1 a 12)
-            option.textContent = mes; // O texto exibido é o nome do mês
-            mesSelect.appendChild(option);
-        });
-    }
-
-    function salvarDados() {
-        let dataInput = document.getElementById('data').value;
-        let data = formatarData(dataInput);
-        let ganhos = parseFloat(document.getElementById('ganhos').value) || 0;
-        let combustivel = parseFloat(document.getElementById('combustivel').value) || 0;
-        let kmRodado = parseFloat(document.getElementById('kmRodado').value) || 0;
-        let manutencao = parseFloat(document.getElementById('manutencao').value) || 0;
-        let metaGanhos = parseFloat(document.getElementById('metaGanhos').value) || 0;
-
-        if (!dataInput) {
-            alert("Por favor, selecione uma data.");
-            return;
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Motorista</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fff;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 0;
         }
 
-        let manutencaoValor = (manutencao / 100) * ganhos;
-        let lucroLiquido = ganhos - combustivel - manutencaoValor;
+        header {
+            background-color: #2267e6;
+            padding: 15px;
+            color: white;
+            font-size: 20px;
+        }
 
-        let registro = { 
-            data,
-            ano: new Date(dataInput).getFullYear(),
-            mes: new Date(dataInput).getMonth() + 1,
-            ganhos: ganhos.toFixed(2), 
-            combustivel: combustivel.toFixed(2), 
-            kmRodado: kmRodado.toFixed(2), 
-            manutencao: manutencao.toFixed(2), 
-            manutencaoValor: manutencaoValor.toFixed(2), 
-            lucroLiquido: lucroLiquido.toFixed(2),
-            valorPorKm: kmRodado > 0 ? (ganhos / kmRodado).toFixed(2) : '0.00' // Calculando o valor pago por km
-        };
+        .container {
+            padding: 20px;
+        }
 
-        let historico = JSON.parse(localStorage.getItem('historico')) || [];
-        historico.push(registro);
-        localStorage.setItem('historico', JSON.stringify(historico));
-        atualizarHistorico();
-        calcularTotais();
-        calcularDashboard();
-        atualizarGraficos();
-        limparCampos();
-    }
+        input,
+        button {
+            display: block;
+            width: 90%;
+            margin: 10px auto;
+            padding: 10px;
+            font-size: 16px;
+        }
 
-    function atualizarHistorico() {
-        let historico = JSON.parse(localStorage.getItem('historico')) || [];
-        let tbody = document.getElementById('historico');
-        tbody.innerHTML = '';
+        button {
+            background-color: #2267e6;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
 
-        const ano = parseInt(document.getElementById('filtrarAno').value);
-        const mes = parseInt(document.getElementById('filtrarMes').value);
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
 
-        let registrosFiltrados = historico.filter(registro => {
-            return (isNaN(mes) || registro.mes === mes) && (isNaN(ano) || registro.ano === ano);
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #2267e6;
+            color: white;
+        }
+
+        .totais {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        #dashboard {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+
+        #exportPDFBtn {
+            margin-top: 20px;
+            background-color: #3498DB;
+        }
+
+        #myChart1,
+        #myChart2 {
+            max-width: 400px;
+            margin: auto;
+        }
+
+        footer {
+            background-color: #2267e6;
+            color: white;
+            padding: 10px;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .contribuir {
+            margin-top: 10px;
+            color: white;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        /* Estilização da tabela de totais */
+        .totais-table td:first-child {
+            background-color: #2267e6;
+            /* Cor de fundo laranja */
+            color: white;
+            /* Cor da fonte branca */
+            text-align: left;
+            /* Alinhamento à esquerda */
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+    <header>App Motorista</header>
+    <div class="container">
+        <h2>Controle de Ganhos</h2> <label for="data">Data:</label> <input type="date" id="data">
+
+        <label for="ganhos">Ganhos Diários (R$):</label>
+        <input type="number" id="ganhos" placeholder="Digite seus ganhos">
+
+        <label for="combustivel">Gasto com Combustível (R$):</label>
+        <input type="number" id="combustivel" placeholder="Digite os gastos">
+
+        <label for="kmRodado">KM Rodado:</label>
+        <input type="number" id="kmRodado" placeholder="Digite os quilômetros rodados">
+
+        <label for="manutencao">Percentual para Manutenção (%):</label>
+        <input type="number" id="manutencao" placeholder="Ex: 10">
+
+        <label for="metaGanhos">Meta de Ganhos (R$):</label>
+        <input type="number" id="metaGanhos" placeholder="Digite sua meta">
+
+        <button onclick="salvarDados()">Salvar</button>
+        <button onclick="resetarDados()">Resetar Tudo</button>
+        <button id="exportPDFBtn" onclick="exportarPDF()">Exportar como PDF</button>
+
+        <h2>Filtrar por Mês e Ano</h2>
+        <label for="filtrarAno">Ano:</label>
+        <input type="number" id="filtrarAno" value="${new Date().getFullYear()}" min="2020">
+
+        <label for="filtrarMes">Mês:</label>
+        <select id="filtrarMes">
+            <option value="">Todos</option>
+        </select>
+        <button onclick="atualizarHistorico()">Filtrar</button>
+
+        <h2>Histórico de Ganhos</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Ganhos</th>
+                    <th>Combustível</th>
+                    <th>KM Rodado</th>
+                    <th>Valor Pago por KM (R$)</th> <!-- Nova coluna -->
+                    <th>Manutenção</th>
+                    <th>Lucro Líquido</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="historico">
+            </tbody>
+        </table>
+
+        <div class="totais">
+            <h3>Totais</h3>
+            <table class="totais-table">
+                <tbody>
+                    <tr>
+                        <td>Total de Ganhos (R$):</td>
+                        <td><span id="totalGanhos">0.00</span></td>
+                    </tr>
+                    <tr>
+                        <td>Total de Gastos com Combustível (R$):</td>
+                        <td><span id="totalCombustivel">0.00</span></td>
+                    </tr>
+                    <tr>
+                        <td>Total de KM Rodado:</td>
+                        <td><span id="totalKmRodado">0.00</span></td>
+                    </tr>
+                    <tr>
+                        <td>Valor Pago por KM Rodado (R$):</td>
+                        <td><span id="valorPorKm">0.00</span></td>
+                    </tr>
+                    <tr>
+                        <td>Total de Manutenção (R$):</td>
+                        <td><span id="totalManutencao">0.00</span></td>
+                    </tr>
+                    <tr>
+                        <td>Total de Lucro Líquido (R$):</td>
+                        <td><span id="totalLucro">0.00</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="dashboard">
+            <h2>Dashboard</h2>
+            <p>Progresso Metas de Ganhos: <span id="progressoMeta">0.00</span></p>
+            <p>Gastos Mensais: <span id="gastosMensais">0.00</span></p>
+            <canvas id="myChart1"></canvas> <!-- Gráfico Circular -->
+            <canvas id="myChart2"></canvas> <!-- Gráfico de Barras -->
+        </div>
+    </div>
+
+    <footer>
+        <p>Desenvolvido por Rodolfo Oliveira - Todos os direitos reservados - 2025</p>
+        <p><a href="https://wa.me/5514997792544" style="color: white;">Contato via WhatsApp: (14) 99779-2544</a></p>
+        <p class="contribuir" onclick="mostrarChavePIX()">Contribua com o app clicando aqui!</p>
+    </footer>
+
+    <script>
+        let myChart1;
+        let myChart2;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            inserirMeses();
+            atualizarHistorico();
+            calcularTotais();
+            calcularDashboard();
+            atualizarGraficos();
+            carregarMeta();
         });
 
-        registrosFiltrados.forEach((registro, index) => {
-            let row = `<tr>
+        function inserirMeses() {
+            const mesSelect = document.getElementById('filtrarMes');
+            const meses = [
+                "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+            ];
+
+            meses.forEach((mes, index) => {
+                const option = document.createElement('option');
+                option.value = index + 1; // O valor corresponde ao número do mês (1 a 12)
+                option.textContent = mes; // O texto exibido é o nome do mês
+                mesSelect.appendChild(option);
+            });
+        }
+
+        function salvarDados() {
+            let dataInput = document.getElementById('data').value;
+            let data = formatarData(dataInput);
+            let ganhos = parseFloat(document.getElementById('ganhos').value) || 0;
+            let combustivel = parseFloat(document.getElementById('combustivel').value) || 0;
+            let kmRodado = parseFloat(document.getElementById('kmRodado').value) || 0;
+            let manutencao = parseFloat(document.getElementById('manutencao').value) || 0;
+            let metaGanhos = parseFloat(document.getElementById('metaGanhos').value) || 0;
+
+            if (!dataInput) {
+                alert("Por favor, selecione uma data.");
+                return;
+            }
+
+            let manutencaoValor = (manutencao / 100) * ganhos;
+            let lucroLiquido = ganhos - combustivel - manutencaoValor;
+
+            let registro = {
+                data,
+                ano: new Date(dataInput).getFullYear(),
+                mes: new Date(dataInput).getMonth() + 1,
+                ganhos: ganhos.toFixed(2),
+                combustivel: combustivel.toFixed(2),
+                kmRodado: kmRodado.toFixed(2),
+                manutencao: manutencao.toFixed(2),
+                manutencaoValor: manutencaoValor.toFixed(2),
+                lucroLiquido: lucroLiquido.toFixed(2),
+                valorPorKm: kmRodado > 0 ? (ganhos / kmRodado).toFixed(2) : '0.00' // Calculando o valor pago por km
+            };
+
+            let historico = JSON.parse(localStorage.getItem('historico')) || [];
+            historico.push(registro);
+            localStorage.setItem('historico', JSON.stringify(historico));
+            atualizarHistorico();
+            calcularTotais();
+            calcularDashboard();
+            atualizarGraficos();
+            limparCampos();
+        }
+
+        function atualizarHistorico() {
+            let historico = JSON.parse(localStorage.getItem('historico')) || [];
+            let tbody = document.getElementById('historico');
+            tbody.innerHTML = '';
+
+            const ano = parseInt(document.getElementById('filtrarAno').value);
+            const mes = parseInt(document.getElementById('filtrarMes').value);
+
+            let registrosFiltrados = historico.filter(registro => {
+                return (isNaN(mes) || registro.mes === mes) && (isNaN(ano) || registro.ano === ano);
+            });
+
+            registrosFiltrados.forEach((registro, index) => {
+                let row = `<tr>
                 <td>${registro.data}</td>
                 <td>R$ ${registro.ganhos}</td>
                 <td>R$ ${registro.combustivel}</td>
@@ -188,214 +305,218 @@
                     <button onclick="deletarRegistro(${index})">Excluir</button>
                 </td>
             </tr>`;
-            tbody.innerHTML += row;
-        });
+                tbody.innerHTML += row;
+            });
 
-        calcularTotais(); // Calcular totais após a atualização da tabela
-    }
-
-    function formatarData(dataInput) {
-        const partesData = dataInput.split('-');
-        return `${partesData[2]}/${partesData[1]}/${partesData[0]}`; // DD/MM/AAAA
-    }
-
-    function calcularTotais() {
-        let historico = JSON.parse(localStorage.getItem('historico')) || [];
-
-        let totalGanhos = 0;
-        let totalCombustivel = 0;
-        let totalKmRodado = 0;
-        let totalManutencao = 0;
-        let totalLucro = 0;
-
-        const ano = parseInt(document.getElementById('filtrarAno').value);
-        const mes = parseInt(document.getElementById('filtrarMes').value);
-
-        let registrosFiltrados = historico.filter(registro => {
-            return (isNaN(mes) || registro.mes === mes) && (isNaN(ano) || registro.ano === ano);
-        });
-
-        registrosFiltrados.forEach(registro => {
-            totalGanhos += parseFloat(registro.ganhos);
-            totalCombustivel += parseFloat(registro.combustivel);
-            totalKmRodado += parseFloat(registro.kmRodado);
-            totalManutencao += (parseFloat(registro.manutencao) / 100) * parseFloat(registro.ganhos);
-            totalLucro += parseFloat(registro.lucroLiquido);
-        });
-
-        document.getElementById('totalGanhos').innerText = totalGanhos.toFixed(2);
-        document.getElementById('totalCombustivel').innerText = totalCombustivel.toFixed(2);
-        document.getElementById('totalKmRodado').innerText = totalKmRodado.toFixed(2);
-        document.getElementById('valorPorKm').innerText = totalKmRodado ? (totalGanhos / totalKmRodado).toFixed(2) : '0.00';
-        document.getElementById('totalManutencao').innerText = totalManutencao.toFixed(2);
-        document.getElementById('totalLucro').innerText = totalLucro.toFixed(2);
-    }
-
-    function calcularDashboard() {
-        let historico = JSON.parse(localStorage.getItem('historico')) || [];
-        let metaGanhos = parseFloat(localStorage.getItem('metaGanhos')) || 0;
-
-        let totalGanhos = 0;
-        let gastosMensais = 0;
-        const ano = parseInt(document.getElementById('filtrarAno').value);
-        const mes = parseInt(document.getElementById('filtrarMes').value);
-
-        let registrosFiltrados = historico.filter(registro => {
-            return (isNaN(mes) || registro.mes === mes) && (isNaN(ano) || registro.ano === ano);
-        });
-
-        registrosFiltrados.forEach(registro => {
-            totalGanhos += parseFloat(registro.ganhos);
-            gastosMensais += parseFloat(registro.combustivel);
-        });
-
-        document.getElementById('progressoMeta').innerText = `${totalGanhos.toFixed(2)} / ${metaGanhos.toFixed(2)}`;
-        document.getElementById('gastosMensais').innerText = gastosMensais.toFixed(2);
-    }
-
-    function atualizarGraficos() {
-        let totalGanhos = parseFloat(document.getElementById('totalGanhos').innerText) || 0;
-        let totalGastos = parseFloat(document.getElementById('totalCombustivel').innerText) || 0;
-        let metaGanhos = parseFloat(localStorage.getItem('metaGanhos')) || 0;
-
-        // Gráfico Circular
-        if (myChart1) {
-            myChart1.destroy();
+            calcularTotais(); // Calcular totais após a atualização da tabela
         }
-        const ctx1 = document.getElementById('myChart1').getContext('2d');
-        myChart1 = new Chart(ctx1, {
-            type: 'pie',
-            data: {
-                labels: ['Ganhos', 'Gastos'],
-                datasets: [{
-                    label: 'Distribuição Financeira',
-                    data: [totalGanhos, totalGastos],
-                    backgroundColor: [
-                        'rgba(46, 204, 113, 0.6)',
-                        'rgba(231, 76, 60, 0.6)',
-                    ],
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'top' },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.label || '';
-                                if (context.parsed > 0) {
-                                    label += ': R$ ' + context.parsed.toFixed(2) + ' (' + ((context.parsed / (totalGanhos + totalGastos)) * 100).toFixed(1) + '%)';
-                                }
-                                return label;
-                            }
-                        }
-                    }
-                }
+
+        function formatarData(dataInput) {
+            const partesData = dataInput.split('-');
+            return `${partesData[2]}/${partesData[1]}/${partesData[0]}`; // DD/MM/AAAA
+        }
+
+        function calcularTotais() {
+            let historico = JSON.parse(localStorage.getItem('historico')) || [];
+
+let totalGanhos = 0;
+let totalCombustivel = 0;
+let totalKmRodado = 0;
+let totalManutencao = 0;
+let totalLucro = 0;
+
+const ano = parseInt(document.getElementById('filtrarAno').value);
+const mes = parseInt(document.getElementById('filtrarMes').value);
+
+let registrosFiltrados = historico.filter(registro => {
+    return (isNaN(mes) || registro.mes === mes) && (isNaN(ano) || registro.ano === ano);
+});
+
+registrosFiltrados.forEach(registro => {
+    totalGanhos += parseFloat(registro.ganhos || 0);
+    totalCombustivel += parseFloat(registro.combustivel || 0);
+    totalKmRodado += parseFloat(registro.kmRodado || 0);
+    
+    // Certifique-se de que o cálculo está correto
+    let manutencaoValor = (parseFloat(registro.manutencao) / 100) * totalGanhos; 
+    totalManutencao += !isNaN(manutencaoValor) ? manutencaoValor : 0;
+
+    totalLucro += parseFloat(registro.lucroLiquido || 0);
+});
+
+document.getElementById('totalGanhos').innerText = totalGanhos.toFixed(2);
+document.getElementById('totalCombustivel').innerText = totalCombustivel.toFixed(2);
+document.getElementById('totalKmRodado').innerText = totalKmRodado.toFixed(2);
+document.getElementById('valorPorKm').innerText = totalKmRodado ? (totalGanhos / totalKmRodado).toFixed(2) : '0.00';
+document.getElementById('totalManutencao').innerText = totalManutencao.toFixed(2);
+document.getElementById('totalLucro').innerText = totalLucro.toFixed(2);
+}
+
+        function calcularDashboard() {
+            let historico = JSON.parse(localStorage.getItem('historico')) || [];
+            let metaGanhos = parseFloat(localStorage.getItem('metaGanhos')) || 0;
+
+            let totalGanhos = 0;
+            let gastosMensais = 0;
+            const ano = parseInt(document.getElementById('filtrarAno').value);
+            const mes = parseInt(document.getElementById('filtrarMes').value);
+
+            let registrosFiltrados = historico.filter(registro => {
+                return (isNaN(mes) || registro.mes === mes) && (isNaN(ano) || registro.ano === ano);
+            });
+
+            registrosFiltrados.forEach(registro => {
+                totalGanhos += parseFloat(registro.ganhos);
+                gastosMensais += parseFloat(registro.combustivel);
+            });
+
+            document.getElementById('progressoMeta').innerText = `${totalGanhos.toFixed(2)} / ${metaGanhos.toFixed(2)}`;
+            document.getElementById('gastosMensais').innerText = gastosMensais.toFixed(2);
+        }
+
+        function atualizarGraficos() {
+            let totalGanhos = parseFloat(document.getElementById('totalGanhos').innerText) || 0;
+            let totalGastos = parseFloat(document.getElementById('totalCombustivel').innerText) || 0;
+            let metaGanhos = parseFloat(localStorage.getItem('metaGanhos')) || 0;
+
+            // Gráfico Circular
+            if (myChart1) {
+                myChart1.destroy();
             }
-        });
-
-        // Gráfico de Barras Horizontais
-        if (myChart2) {
-            myChart2.destroy();
-        }
-        const ctx2 = document.getElementById('myChart2').getContext('2d');
-        myChart2 = new Chart(ctx2, {
-            type: 'bar',
-            data: {
-                labels: ['Ganhos', 'Meta'],
-                datasets: [{
-                    label: 'Comparação com Meta',
-                    data: [totalGanhos, metaGanhos],
-                    backgroundColor: [
-                        'rgba(46, 204, 113, 0.6)',
-                        'rgba(52, 152, 219, 0.6)'
-                    ],
-                }]
-            },
-            options: {
-                responsive: true,
-                indexAxis: 'y',
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (context.parsed.y > 0) {
-                                    label += ': R$ ' + context.parsed.y.toFixed(2) + ' (' + ((context.parsed.y / metaGanhos) * 100).toFixed(1) + '%)';
+            const ctx1 = document.getElementById('myChart1').getContext('2d');
+            myChart1 = new Chart(ctx1, {
+                type: 'pie',
+                data: {
+                    labels: ['Ganhos', 'Gastos'],
+                    datasets: [{
+                        label: 'Distribuição Financeira',
+                        data: [totalGanhos, totalGastos],
+                        backgroundColor: [
+                            'rgba(46, 204, 113, 0.6)',
+                            'rgba(231, 76, 60, 0.6)',
+                        ],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.label || '';
+                                    if (context.parsed > 0) {
+                                        label += ': R$ ' + context.parsed.toFixed(2) + ' (' + ((context.parsed / (totalGanhos + totalGastos)) * 100).toFixed(1) + '%)';
+                                    }
+                                    return label;
                                 }
-                                return label;
                             }
                         }
                     }
                 }
-            },
-        });
-    }
+            });
 
-    function limparCampos() {
-        document.getElementById('data').value = '';
-        document.getElementById('ganhos').value = '';
-        document.getElementById('combustivel').value = '';
-        document.getElementById('kmRodado').value = '';
-        document.getElementById('manutencao').value = '';
-        document.getElementById('metaGanhos').value = '';
-    }
+            // Gráfico de Barras Horizontais
+            if (myChart2) {
+                myChart2.destroy();
+            }
+            const ctx2 = document.getElementById('myChart2').getContext('2d');
+            myChart2 = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['Ganhos', 'Meta'],
+                    datasets: [{
+                        label: 'Comparação com Meta',
+                        data: [totalGanhos, metaGanhos],
+                        backgroundColor: [
+                            'rgba(46, 204, 113, 0.6)',
+                            'rgba(52, 152, 219, 0.6)'
+                        ],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.dataset.label || '';
+                                    if (context.parsed.y > 0) {
+                                        label += ': R$ ' + context.parsed.y.toFixed(2) + ' (' + ((context.parsed.y / metaGanhos) * 100).toFixed(1) + '%)';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                },
+            });
+        }
 
-    function resetarDados() {
-        if (confirm("Tem certeza que deseja resetar todos os dados?")) {
-            localStorage.removeItem('historico');
-            localStorage.removeItem('metaGanhos');
+        function limparCampos() {
+            document.getElementById('data').value = '';
+            document.getElementById('ganhos').value = '';
+            document.getElementById('combustivel').value = '';
+            document.getElementById('kmRodado').value = '';
+            document.getElementById('manutencao').value = '';
+            document.getElementById('metaGanhos').value = '';
+        }
+
+        function resetarDados() {
+            if (confirm("Tem certeza que deseja resetar todos os dados?")) {
+                localStorage.removeItem('historico');
+                localStorage.removeItem('metaGanhos');
+                atualizarHistorico();
+                calcularTotais();
+                calcularDashboard();
+                atualizarGraficos();
+            }
+        }
+
+        function deletarRegistro(index) {
+            let historico = JSON.parse(localStorage.getItem('historico')) || [];
+            historico.splice(index, 1);
+            localStorage.setItem('historico', JSON.stringify(historico));
             atualizarHistorico();
             calcularTotais();
             calcularDashboard();
             atualizarGraficos();
         }
-    }
 
-    function deletarRegistro(index) {
-        let historico = JSON.parse(localStorage.getItem('historico')) || [];
-        historico.splice(index, 1);
-        localStorage.setItem('historico', JSON.stringify(historico));
-        atualizarHistorico();
-        calcularTotais();
-        calcularDashboard();
-        atualizarGraficos();
-    }
+        function editarRegistro(index) {
+            let historico = JSON.parse(localStorage.getItem('historico')) || [];
+            let registro = historico[index];
 
-    function editarRegistro(index) {
-        let historico = JSON.parse(localStorage.getItem('historico')) || [];
-        let registro = historico[index];
+            document.getElementById('data').value = registro.data.split('/').reverse().join('-');
+            document.getElementById('ganhos').value = registro.ganhos;
+            document.getElementById('combustivel').value = registro.combustivel;
+            document.getElementById('kmRodado').value = registro.kmRodado;
+            document.getElementById('manutencao').value = registro.manutencao;
 
-        document.getElementById('data').value = registro.data.split('/').reverse().join('-');
-        document.getElementById('ganhos').value = registro.ganhos;
-        document.getElementById('combustivel').value = registro.combustivel;
-        document.getElementById('kmRodado').value = registro.kmRodado;
-        document.getElementById('manutencao').value = registro.manutencao;
-
-        deletarRegistro(index);
-    }
-
-    function carregarMeta() {
-        let metaGanhos = localStorage.getItem('metaGanhos');
-        if (metaGanhos) {
-            document.getElementById('metaGanhos').value = metaGanhos;
+            deletarRegistro(index);
         }
-    }
 
-    function atualizarMeta() {
-        let meta = parseFloat(document.getElementById('metaGanhos').value);
-        if (!isNaN(meta)) {
-            localStorage.setItem('metaGanhos', meta);
-            calcularDashboard();
-            atualizarGraficos();
+        function carregarMeta() {
+            let metaGanhos = localStorage.getItem('metaGanhos');
+            if (metaGanhos) {
+                document.getElementById('metaGanhos').value = metaGanhos;
+            }
         }
-    }
 
-    document.getElementById('metaGanhos').addEventListener('change', atualizarMeta);
+        function atualizarMeta() {
+            let meta = parseFloat(document.getElementById('metaGanhos').value);
+            if (!isNaN(meta)) {
+                localStorage.setItem('metaGanhos', meta);
+                calcularDashboard();
+                atualizarGraficos();
+            }
+        }
 
-    function exportarPDF() {
-        const { jsPDF } = window.jspdf;
+        document.getElementById('metaGanhos').addEventListener('change', atualizarMeta);
+
+        function exportarPDF() {
+            const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             doc.setFontSize(10);
 
@@ -416,7 +537,7 @@
             doc.text(`Total de Gastos: R$ ${totalCombustivel.toFixed(2)}`, 10, 40);
             doc.text(`Lucro Líquido Total: R$ ${totalLucro.toFixed(2)}`, 10, 50);
             doc.text(`Valor Total Pago por KM: R$ ${valorPagoPorKmTotal}`, 10, 60); // Adicionando valor total pago por km
-            
+
             doc.text("", 10, 70); // Adicionando espaço em branco
 
             // Histórico de Ganhos
@@ -431,9 +552,11 @@
 
             doc.save("historico_ganhos.pdf");
         }
-    function mostrarChavePIX() {
-        alert("Chave PIX para contribuição: 12345678901\nAgradecemos sua contribuição!");
-    }
-</script>
+        function mostrarChavePIX() {
+            alert("Chave PIX para contribuição: Celular 14 99779-2544\nAgradecemos sua contribuição!");
+        }
+    </script>
 
-</body> </html>
+</body>
+
+</html>
