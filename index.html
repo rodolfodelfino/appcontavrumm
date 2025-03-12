@@ -101,7 +101,7 @@
         /* Estilização da tabela de totais */
         .totais-table td:first-child {
             background-color: #2267e6;
-            /* Cor de fundo laranja */
+            /* Cor de fundo azul */
             color: white;
             /* Cor da fonte branca */
             text-align: left;
@@ -115,7 +115,9 @@
 <body>
     <header>App Motorista</header>
     <div class="container">
-        <h2>Controle de Ganhos</h2> <label for="data">Data:</label> <input type="date" id="data">
+        <h2>Controle de Ganhos</h2>
+        <label for="data">Data:</label>
+        <input type="date" id="data">
 
         <label for="ganhos">Ganhos Diários (R$):</label>
         <input type="number" id="ganhos" placeholder="Digite seus ganhos">
@@ -160,8 +162,7 @@
                     <th>Ações</th>
                 </tr>
             </thead>
-            <tbody id="historico">
-            </tbody>
+            <tbody id="historico"></tbody>
         </table>
 
         <div class="totais">
@@ -319,38 +320,38 @@
         function calcularTotais() {
             let historico = JSON.parse(localStorage.getItem('historico')) || [];
 
-let totalGanhos = 0;
-let totalCombustivel = 0;
-let totalKmRodado = 0;
-let totalManutencao = 0;
-let totalLucro = 0;
+            let totalGanhos = 0;
+            let totalCombustivel = 0;
+            let totalKmRodado = 0;
+            let totalManutencao = 0;
+            let totalLucro = 0;
 
-const ano = parseInt(document.getElementById('filtrarAno').value);
-const mes = parseInt(document.getElementById('filtrarMes').value);
+            const ano = parseInt(document.getElementById('filtrarAno').value);
+            const mes = parseInt(document.getElementById('filtrarMes').value);
 
-let registrosFiltrados = historico.filter(registro => {
-    return (isNaN(mes) || registro.mes === mes) && (isNaN(ano) || registro.ano === ano);
-});
+            let registrosFiltrados = historico.filter(registro => {
+                return (isNaN(mes) || registro.mes === mes) && (isNaN(ano) || registro.ano === ano);
+            });
 
-registrosFiltrados.forEach(registro => {
-    totalGanhos += parseFloat(registro.ganhos || 0);
-    totalCombustivel += parseFloat(registro.combustivel || 0);
-    totalKmRodado += parseFloat(registro.kmRodado || 0);
-    
-    // Certifique-se de que o cálculo está correto
-    let manutencaoValor = (parseFloat(registro.manutencao) / 100) * totalGanhos; 
-    totalManutencao += !isNaN(manutencaoValor) ? manutencaoValor : 0;
+            registrosFiltrados.forEach(registro => {
+                totalGanhos += parseFloat(registro.ganhos || 0);
+                totalCombustivel += parseFloat(registro.combustivel || 0);
+                totalKmRodado += parseFloat(registro.kmRodado || 0);
 
-    totalLucro += parseFloat(registro.lucroLiquido || 0);
-});
+                // Certifique-se de que o cálculo está correto
+                let manutencaoValor = (parseFloat(registro.manutencao) / 100) * totalGanhos;
+                totalManutencao += !isNaN(manutencaoValor) ? manutencaoValor : 0;
 
-document.getElementById('totalGanhos').innerText = totalGanhos.toFixed(2);
-document.getElementById('totalCombustivel').innerText = totalCombustivel.toFixed(2);
-document.getElementById('totalKmRodado').innerText = totalKmRodado.toFixed(2);
-document.getElementById('valorPorKm').innerText = totalKmRodado ? (totalGanhos / totalKmRodado).toFixed(2) : '0.00';
-document.getElementById('totalManutencao').innerText = totalManutencao.toFixed(2);
-document.getElementById('totalLucro').innerText = totalLucro.toFixed(2);
-}
+                totalLucro += parseFloat(registro.lucroLiquido || 0);
+            });
+
+            document.getElementById('totalGanhos').innerText = totalGanhos.toFixed(2);
+            document.getElementById('totalCombustivel').innerText = totalCombustivel.toFixed(2);
+            document.getElementById('totalKmRodado').innerText = totalKmRodado.toFixed(2);
+            document.getElementById('valorPorKm').innerText = totalKmRodado ? (totalGanhos / totalKmRodado).toFixed(2) : '0.00';
+            document.getElementById('totalManutencao').innerText = totalManutencao.toFixed(2);
+            document.getElementById('totalLucro').innerText = totalLucro.toFixed(2);
+        }
 
         function calcularDashboard() {
             let historico = JSON.parse(localStorage.getItem('historico')) || [];
@@ -520,6 +521,9 @@ document.getElementById('totalLucro').innerText = totalLucro.toFixed(2);
             const doc = new jsPDF();
             doc.setFontSize(10);
 
+            // Adicionando título
+            doc.text("Resumo Financeiro", 14, 10);
+
             // Informações Resumo
             let metaGanhos = parseFloat(localStorage.getItem('metaGanhos')) || 0;
             let totalGanhos = parseFloat(document.getElementById('totalGanhos').innerText) || 0;
@@ -530,8 +534,7 @@ document.getElementById('totalLucro').innerText = totalLucro.toFixed(2);
             // Calculando o valor total pago por km
             let valorPagoPorKmTotal = totalKmRodado ? (totalGanhos / totalKmRodado).toFixed(2) : '0.00';
 
-            // Cabeçalho do PDF
-            doc.text("Resumo do Mês", 14, 10);
+            // Informações gerais no PDF
             doc.text(`Meta de Ganhos: R$ ${metaGanhos.toFixed(2)}`, 10, 20);
             doc.text(`Total de Ganhos: R$ ${totalGanhos.toFixed(2)}`, 10, 30);
             doc.text(`Total de Gastos: R$ ${totalCombustivel.toFixed(2)}`, 10, 40);
@@ -540,18 +543,37 @@ document.getElementById('totalLucro').innerText = totalLucro.toFixed(2);
 
             doc.text("", 10, 70); // Adicionando espaço em branco
 
-            // Histórico de Ganhos
-            doc.text("Histórico de Ganhos", 7, 80);
-            let historico = JSON.parse(localStorage.getItem('historico')) || [];
+            // Tabela do Histórico de Ganhos
+            doc.text("Histórico de Ganhos", 10, 80);
+            const historico = JSON.parse(localStorage.getItem('historico')) || [];
             let offsetY = 90;
 
+            // Cabeçalhos da tabela
+            const headers = ["Data", "Ganhos", "Combustível", "KM Rodado", "Valor Pago/KM", "Manutenção", "Lucro"];
+            const colWidth = 30; // Define a largura da coluna
+            const startX = 10; // Posição inicial do eixo X
+
+            headers.forEach((header, index) => {
+                doc.text(header, startX + (index * colWidth), offsetY);
+            });
+            offsetY += 10;
+
+            // Conteúdo da tabela
             historico.forEach(registro => {
-                doc.text(`Dia:${registro.data} | Ganho:R$ ${registro.ganhos} | Comb:R$ ${registro.combustivel} | KM:${registro.kmRodado} | Pagto / KM:R$ ${registro.valorPorKm} | Manut.:R$ ${registro.manutencaoValor} | Lucro:R$ ${registro.lucroLiquido}`, 10, offsetY);
+                doc.text(registro.data, startX, offsetY); // Alinha Data
+                doc.text(`R$ ${registro.ganhos}`, startX + (1 * colWidth), offsetY); // Alinha Ganhos
+                doc.text(`R$ ${registro.combustivel}`, startX + (2 * colWidth), offsetY); // Alinha Combustível
+                doc.text(`${registro.kmRodado} km`, startX + (3 * colWidth), offsetY); // Alinha KM Rodado
+                doc.text(`R$ ${registro.valorPorKm}`, startX + (4 * colWidth), offsetY); // Alinha Valor Pago por KM
+                doc.text(`R$ ${registro.manutencaoValor}`, startX + (5 * colWidth), offsetY); // Alinha Manutenção
+                doc.text(`R$ ${registro.lucroLiquido}`, startX + (6 * colWidth), offsetY); // Alinha Lucro
+
                 offsetY += 8; // Ajustando a altura entre as linhas
             });
 
             doc.save("historico_ganhos.pdf");
         }
+
         function mostrarChavePIX() {
             alert("Chave PIX para contribuição: Celular 14 99779-2544\nAgradecemos sua contribuição!");
         }
