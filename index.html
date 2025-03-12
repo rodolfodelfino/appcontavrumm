@@ -517,62 +517,74 @@
         document.getElementById('metaGanhos').addEventListener('change', atualizarMeta);
 
         function exportarPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.setFontSize(10);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(10);
 
-            // Adicionando título
-            doc.text("Resumo Financeiro", 14, 10);
+    // Adicionando título
+    doc.text("Resumo Financeiro", 14, 10);
 
-            // Informações Resumo
-            let metaGanhos = parseFloat(localStorage.getItem('metaGanhos')) || 0;
-            let totalGanhos = parseFloat(document.getElementById('totalGanhos').innerText) || 0;
-            let totalCombustivel = parseFloat(document.getElementById('totalCombustivel').innerText) || 0;
-            let totalLucro = parseFloat(document.getElementById('totalLucro').innerText) || 0;
-            let totalKmRodado = parseFloat(document.getElementById('totalKmRodado').innerText) || 0;
+    // Informações Resumo
+    let metaGanhos = parseFloat(localStorage.getItem('metaGanhos')) || 0;
+    let totalGanhos = parseFloat(document.getElementById('totalGanhos').innerText) || 0;
+    let totalCombustivel = parseFloat(document.getElementById('totalCombustivel').innerText) || 0;
+    let totalLucro = parseFloat(document.getElementById('totalLucro').innerText) || 0;
+    let totalKmRodado = parseFloat(document.getElementById('totalKmRodado').innerText) || 0;
+    let valorPagoPorKmTotal = totalKmRodado ? (totalGanhos / totalKmRodado).toFixed(2) : '0.00';
 
-            // Calculando o valor total pago por km
-            let valorPagoPorKmTotal = totalKmRodado ? (totalGanhos / totalKmRodado).toFixed(2) : '0.00';
+    // Informações gerais no PDF
+    doc.text(`Meta de Ganhos: R$ ${metaGanhos.toFixed(2)}`, 10, 20);
+    doc.text(`Total de Ganhos: R$ ${totalGanhos.toFixed(2)}`, 10, 30);
+    doc.text(`Total de Gastos: R$ ${totalCombustivel.toFixed(2)}`, 10, 40);
+    doc.text(`Lucro Líquido Total: R$ ${totalLucro.toFixed(2)}`, 10, 50);
+    doc.text(`Valor Total Pago por KM: R$ ${valorPagoPorKmTotal}`, 10, 60);
+    doc.text("", 10, 70); // Adicionando espaço em branco
 
-            // Informações gerais no PDF
-            doc.text(`Meta de Ganhos: R$ ${metaGanhos.toFixed(2)}`, 10, 20);
-            doc.text(`Total de Ganhos: R$ ${totalGanhos.toFixed(2)}`, 10, 30);
-            doc.text(`Total de Gastos: R$ ${totalCombustivel.toFixed(2)}`, 10, 40);
-            doc.text(`Lucro Líquido Total: R$ ${totalLucro.toFixed(2)}`, 10, 50);
-            doc.text(`Valor Total Pago por KM: R$ ${valorPagoPorKmTotal}`, 10, 60); // Adicionando valor total pago por km
+    // Tabela do Histórico de Ganhos
+    doc.text("Histórico de Ganhos", 10, 80);
+    const historico = JSON.parse(localStorage.getItem('historico')) || [];
+    let offsetY = 90;
 
-            doc.text("", 10, 70); // Adicionando espaço em branco
+    // Cabeçalhos da tabela
+    const headers = ["Data", "Ganhos", "Combustível", "KM Rodado", "Valor Pago/KM", "Manutenção", "Lucro"];
+    const colWidth = 25; // Largura da coluna
+    const startX = 10; // Posição inicial do eixo X
 
-            // Tabela do Histórico de Ganhos
-            doc.text("Histórico de Ganhos", 10, 80);
-            const historico = JSON.parse(localStorage.getItem('historico')) || [];
-            let offsetY = 90;
+    // Adicionando cabeçalhos centralizados
+    headers.forEach((header, index) => {
+        const x = startX + (index * colWidth);
+        doc.text(header, x + (colWidth / 2), offsetY, { align: "center" }); // Cabeçalho centralizado
+    });
 
-            // Cabeçalhos da tabela
-            const headers = ["Data", "Ganhos", "Combustível", "KM Rodado", "Valor Pago/KM", "Manutenção", "Lucro"];
-            const colWidth = 30; // Define a largura da coluna
-            const startX = 10; // Posição inicial do eixo X
+    // Desenhando o retângulo para os cabeçalhos
+    doc.rect(startX, offsetY - 5, colWidth * headers.length, 10); // Linha para todos os cabeçalhos
+    offsetY += 10; // Ajuste para as próximas linhas 
 
-            headers.forEach((header, index) => {
-                doc.text(header, startX + (index * colWidth), offsetY);
-            });
-            offsetY += 10;
+    // Conteúdo da tabela com linhas
+    historico.forEach(registro => {
+        const y = offsetY; // Posição Y da linha atual
+        
+        // Alinhando as informações centralizadamente
+        doc.text(registro.data, startX + (0.5 * colWidth), y + 4, { align: "center" }); // Offset para centralizar verticalmente
+        doc.text(`R$ ${registro.ganhos}`, startX + (1.5 * colWidth), y + 4, { align: "center" });
+        doc.text(`R$ ${registro.combustivel}`, startX + (2.5 * colWidth), y + 4, { align: "center" });
+        doc.text(`${registro.kmRodado} km`, startX + (3.5 * colWidth), y + 4, { align: "center" });
+        doc.text(`R$ ${registro.valorPorKm}`, startX + (4.5 * colWidth), y + 4, { align: "center" });
+        doc.text(`R$ ${registro.manutencaoValor}`, startX + (5.5 * colWidth), y + 4, { align: "center" });
+        doc.text(`R$ ${registro.lucroLiquido}`, startX + (6.5 * colWidth), y + 4, { align: "center" });
 
-            // Conteúdo da tabela
-            historico.forEach(registro => {
-                doc.text(registro.data, startX, offsetY); // Alinha Data
-                doc.text(`R$ ${registro.ganhos}`, startX + (1 * colWidth), offsetY); // Alinha Ganhos
-                doc.text(`R$ ${registro.combustivel}`, startX + (2 * colWidth), offsetY); // Alinha Combustível
-                doc.text(`${registro.kmRodado} km`, startX + (3 * colWidth), offsetY); // Alinha KM Rodado
-                doc.text(`R$ ${registro.valorPorKm}`, startX + (4 * colWidth), offsetY); // Alinha Valor Pago por KM
-                doc.text(`R$ ${registro.manutencaoValor}`, startX + (5 * colWidth), offsetY); // Alinha Manutenção
-                doc.text(`R$ ${registro.lucroLiquido}`, startX + (6 * colWidth), offsetY); // Alinha Lucro
+        // Desenhando o retângulo de cada linha após o texto, para evitar sobreposição
+        doc.rect(startX, y - 5, colWidth * headers.length, 10); // Linha para todas as células
 
-                offsetY += 8; // Ajustando a altura entre as linhas
-            });
+        offsetY += 10; // Ajustando a altura entre as linhas
+    });
 
-            doc.save("historico_ganhos.pdf");
-        }
+    doc.save("historico_ganhos.pdf");
+}
+
+
+
+
 
         function mostrarChavePIX() {
             alert("Chave PIX para contribuição: Celular 14 99779-2544\nAgradecemos sua contribuição!");
