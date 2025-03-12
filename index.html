@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App Conta Vrumm</title>
+    <title>App Motorista</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -80,12 +80,18 @@
             cursor: pointer;
             text-decoration: underline;
         }
+        /* Estilização da tabela de totais */
+        .totais-table td:first-child {
+            background-color: #E67E22; /* Cor de fundo laranja */
+            color: white; /* Cor da fonte branca */
+            text-align: left; /* Alinhamento à esquerda */
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
 </head>
 <body>
-    <header>App Conta Vrumm</header>
+    <header>App Motorista</header>
     <div class="container">
         <h2>Controle de Ganhos</h2>
         <label for="data">Data:</label>
@@ -96,6 +102,9 @@
 
         <label for="combustivel">Gasto com Combustível (R$):</label>
         <input type="number" id="combustivel" placeholder="Digite os gastos">
+
+        <label for="kmRodado">KM Rodado:</label>
+        <input type="number" id="kmRodado" placeholder="Digite os quilômetros rodados">
 
         <label for="manutencao">Percentual para Manutenção (%):</label>
         <input type="number" id="manutencao" placeholder="Ex: 10">
@@ -114,7 +123,6 @@
         <label for="filtrarMes">Mês:</label>
         <select id="filtrarMes">
             <option value="">Todos</option>
-            <!-- As opções dos meses serão inseridas aqui pelo JavaScript -->
         </select>
         <button onclick="atualizarHistorico()">Filtrar</button>
 
@@ -125,6 +133,8 @@
                     <th>Data</th>
                     <th>Ganhos</th>
                     <th>Combustível</th>
+                    <th>KM Rodado</th>
+                    <th>Valor Pago por KM (R$)</th> <!-- Nova coluna -->
                     <th>Manutenção</th>
                     <th>Lucro Líquido</th>
                     <th>Ações</th>
@@ -135,10 +145,35 @@
         </table>
 
         <div class="totais">
-            <p>Total de Ganhos (R$): <span id="totalGanhos">0.00</span></p>
-            <p>Total de Gastos com Combustível (R$): <span id="totalCombustivel">0.00</span></p>
-            <p>Total de Manutenção (R$): <span id="totalManutencao">0.00</span></p>
-            <p>Total de Lucro Líquido (R$): <span id="totalLucro">0.00</span></p>
+            <h3>Totais</h3>
+            <table class="totais-table">
+                <tbody>
+                    <tr>
+                        <td>Total de Ganhos (R$):</td>
+                        <td><span id="totalGanhos">0.00</span></td>
+                    </tr>
+                    <tr>
+                        <td>Total de Gastos com Combustível (R$):</td>
+                        <td><span id="totalCombustivel">0.00</span></td>
+                    </tr>
+                    <tr>
+                        <td>Total de KM Rodado:</td>
+                        <td><span id="totalKmRodado">0.00</span></td>
+                    </tr>
+                    <tr>
+                        <td>Valor Pago por KM Rodado (R$):</td>
+                        <td><span id="valorPorKm">0.00</span></td>
+                    </tr>
+                    <tr>
+                        <td>Total de Manutenção (R$):</td>
+                        <td><span id="totalManutencao">0.00</span></td>
+                    </tr>
+                    <tr>
+                        <td>Total de Lucro Líquido (R$):</td>
+                        <td><span id="totalLucro">0.00</span></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
         <div id="dashboard">
@@ -189,6 +224,7 @@
             let data = formatarData(dataInput);
             let ganhos = parseFloat(document.getElementById('ganhos').value) || 0;
             let combustivel = parseFloat(document.getElementById('combustivel').value) || 0;
+            let kmRodado = parseFloat(document.getElementById('kmRodado').value) || 0;
             let manutencao = parseFloat(document.getElementById('manutencao').value) || 0;
             let metaGanhos = parseFloat(document.getElementById('metaGanhos').value) || 0;
 
@@ -206,9 +242,11 @@
                 mes: new Date(dataInput).getMonth() + 1,
                 ganhos: ganhos.toFixed(2), 
                 combustivel: combustivel.toFixed(2), 
+                kmRodado: kmRodado.toFixed(2), 
                 manutencao: manutencao.toFixed(2), 
                 manutencaoValor: manutencaoValor.toFixed(2), 
-                lucroLiquido: lucroLiquido.toFixed(2) 
+                lucroLiquido: lucroLiquido.toFixed(2),
+                valorPorKm: kmRodado > 0 ? (ganhos / kmRodado).toFixed(2) : '0.00' // Calculando o valor pago por km
             };
 
             let historico = JSON.parse(localStorage.getItem('historico')) || [];
@@ -238,6 +276,8 @@
                     <td>${registro.data}</td>
                     <td>R$ ${registro.ganhos}</td>
                     <td>R$ ${registro.combustivel}</td>
+                    <td>${registro.kmRodado} km</td>
+                    <td>R$ ${registro.valorPorKm}</td> <!-- Nova coluna -->
                     <td>${registro.manutencao}% (R$ ${registro.manutencaoValor})</td>
                     <td>R$ ${registro.lucroLiquido}</td>
                     <td>
@@ -261,6 +301,7 @@
 
             let totalGanhos = 0;
             let totalCombustivel = 0;
+            let totalKmRodado = 0;
             let totalManutencao = 0;
             let totalLucro = 0;
 
@@ -274,12 +315,15 @@
             registrosFiltrados.forEach(registro => {
                 totalGanhos += parseFloat(registro.ganhos);
                 totalCombustivel += parseFloat(registro.combustivel);
+                totalKmRodado += parseFloat(registro.kmRodado);
                 totalManutencao += (parseFloat(registro.manutencao) / 100) * parseFloat(registro.ganhos);
                 totalLucro += parseFloat(registro.lucroLiquido);
             });
 
             document.getElementById('totalGanhos').innerText = totalGanhos.toFixed(2);
             document.getElementById('totalCombustivel').innerText = totalCombustivel.toFixed(2);
+            document.getElementById('totalKmRodado').innerText = totalKmRodado.toFixed(2);
+            document.getElementById('valorPorKm').innerText = totalKmRodado ? (totalGanhos / totalKmRodado).toFixed(2) : '0.00';
             document.getElementById('totalManutencao').innerText = totalManutencao.toFixed(2);
             document.getElementById('totalLucro').innerText = totalLucro.toFixed(2);
         }
@@ -382,7 +426,7 @@
                             }
                         }
                     }
-                }
+                },
             });
         }
 
@@ -390,6 +434,7 @@
             document.getElementById('data').value = '';
             document.getElementById('ganhos').value = '';
             document.getElementById('combustivel').value = '';
+            document.getElementById('kmRodado').value = '';
             document.getElementById('manutencao').value = '';
             document.getElementById('metaGanhos').value = '';
         }
@@ -422,6 +467,7 @@
             document.getElementById('data').value = registro.data.split('/').reverse().join('-');
             document.getElementById('ganhos').value = registro.ganhos;
             document.getElementById('combustivel').value = registro.combustivel;
+            document.getElementById('kmRodado').value = registro.kmRodado;
             document.getElementById('manutencao').value = registro.manutencao;
 
             deletarRegistro(index);
@@ -448,13 +494,17 @@
         function exportarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            doc.setFontSize(10); // Definindo a fonte para 10 pontos
-            
+            doc.setFontSize(10);
+
             // Informações Resumo
             let metaGanhos = parseFloat(localStorage.getItem('metaGanhos')) || 0;
             let totalGanhos = parseFloat(document.getElementById('totalGanhos').innerText) || 0;
             let totalCombustivel = parseFloat(document.getElementById('totalCombustivel').innerText) || 0;
             let totalLucro = parseFloat(document.getElementById('totalLucro').innerText) || 0;
+            let totalKmRodado = parseFloat(document.getElementById('totalKmRodado').innerText) || 0;
+
+            // Calculando o valor total pago por km
+            let valorPagoPorKmTotal = totalKmRodado ? (totalGanhos / totalKmRodado).toFixed(2) : '0.00';
 
             // Cabeçalho do PDF
             doc.text("Resumo do Mês", 14, 10);
@@ -462,15 +512,17 @@
             doc.text(`Total de Ganhos: R$ ${totalGanhos.toFixed(2)}`, 10, 30);
             doc.text(`Total de Gastos: R$ ${totalCombustivel.toFixed(2)}`, 10, 40);
             doc.text(`Lucro Líquido Total: R$ ${totalLucro.toFixed(2)}`, 10, 50);
-            doc.text("", 10, 60); // Adicionando espaço em branco
+            doc.text(`Valor Total Pago por KM: R$ ${valorPagoPorKmTotal}`, 10, 60); // Adicionando valor total pago por km
+            
+            doc.text("", 10, 70); // Adicionando espaço em branco
 
             // Histórico de Ganhos
-            doc.text("Histórico de Ganhos", 14, 70);
+            doc.text("Histórico de Ganhos", 7, 80);
             let historico = JSON.parse(localStorage.getItem('historico')) || [];
-            let offsetY = 80;
+            let offsetY = 90;
 
             historico.forEach(registro => {
-                doc.text(`Data: ${registro.data} | Ganhos: R$ ${registro.ganhos} | Combustível: R$ ${registro.combustivel} | Manut.: ${registro.manutencao}% (R$ ${registro.manutencaoValor}) | Lucro: R$ ${registro.lucroLiquido}`, 10, offsetY);
+                doc.text(`Dia:${registro.data} | Ganho:R$ ${registro.ganhos} | Comb:R$ ${registro.combustivel} | KM:${registro.kmRodado} | Pagto / KM:R$ ${registro.valorPorKm} | Manut.:R$ ${registro.manutencaoValor} | Lucro:R$ ${registro.lucroLiquido}`, 10, offsetY);
                 offsetY += 8; // Ajustando a altura entre as linhas
             });
 
@@ -478,7 +530,7 @@
         }
 
         function mostrarChavePIX() {
-            alert("Chave PIX para contribuição: Celular 14997792544\nAgradecemos sua contribuição!");
+            alert("Chave PIX para contribuição: 12345678901\nAgradecemos sua contribuição!");
         }
     </script>
 </body>
