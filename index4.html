@@ -230,47 +230,74 @@
         }
 
         function salvarDados() {
-            let dataInput = document.getElementById('data').value;
-            let data = formatarData(dataInput);
-            let ganhos = parseFloat(document.getElementById('ganhos').value) || 0;
-            let valorCombustivel = parseFloat(document.getElementById('valorCombustivel').value) || 0;
-            let consumoPorKm = parseFloat(document.getElementById('consumoPorKm').value) || 0;
-            let kmRodado = parseFloat(document.getElementById('kmRodado').value) || 0;
-            let manutencao = parseFloat(document.getElementById('manutencao').value) || 0;
-            let metaGanhos = parseFloat(document.getElementById('metaGanhos').value) || 0;
+    let dataInput = document.getElementById('data').value;
+    let data = formatarData(dataInput);
+    let ganhos = parseFloat(document.getElementById('ganhos').value) || 0;
+    let valorCombustivel = parseFloat(document.getElementById('valorCombustivel').value) || 0;
+    let consumoPorKm = parseFloat(document.getElementById('consumoPorKm').value) || 0; // Pegando o consumo por km
+    let kmRodado = parseFloat(document.getElementById('kmRodado').value) || 0;
+    let manutencao = parseFloat(document.getElementById('manutencao').value) || 0;
+    let metaGanhos = parseFloat(document.getElementById('metaGanhos').value) || 0;
 
-            if (!dataInput) {
-                alert("Por favor, selecione uma data.");
-                return;
-            }
+    if (!dataInput) {
+        alert("Por favor, selecione uma data.");
+        return;
+    }
 
-            // Calculando o gasto com combustível de acordo com a fórmula corrigida
-            let gastoCombustivel = (valorCombustivel / consumoPorKm) * kmRodado; 
-            let manutencaoValor = (manutencao / 100) * ganhos;
-            let lucroLiquido = ganhos - gastoCombustivel - manutencaoValor;
+    // Calculando o gasto com combustível de acordo com a fórmula corrigida
+    let gastoCombustivel = (valorCombustivel / consumoPorKm) * kmRodado;
+    let manutencaoValor = (manutencao / 100) * ganhos;
+    let lucroLiquido = ganhos - gastoCombustivel - manutencaoValor;
 
-            let registro = {
-                data,
-                ano: new Date(dataInput).getFullYear(),
-                mes: new Date(dataInput).getMonth() + 1,
-                ganhos: ganhos.toFixed(2),
-                combustivel: gastoCombustivel.toFixed(2),
-                kmRodado: kmRodado.toFixed(2),
-                manutencao: manutencao.toFixed(2),
-                manutencaoValor: manutencaoValor.toFixed(2),
-                lucroLiquido: lucroLiquido.toFixed(2),
-                valorPorKm: kmRodado > 0 ? (ganhos / kmRodado).toFixed(2) : '0.00' // Calculando o valor pago por km
-            };
+    let registro = {
+        data,
+        ano: new Date(dataInput).getFullYear(),
+        mes: new Date(dataInput).getMonth() + 1,
+        ganhos: ganhos.toFixed(2),
+        combustivel: gastoCombustivel.toFixed(2),
+        kmRodado: kmRodado.toFixed(2),
+        manutencao: manutencao.toFixed(2),
+        manutencaoValor: manutencaoValor.toFixed(2),
+        lucroLiquido: lucroLiquido.toFixed(2),
+        valorPorKm: kmRodado > 0 ? (ganhos / kmRodado).toFixed(2) : '0.00', // Calculando o valor pago por km
+        consumoPorKm: consumoPorKm.toFixed(2), // Adicionando o consumo por km no registro
+        metaGanhos: metaGanhos.toFixed(2) // Adicionando a meta de ganhos no registro
+    };
 
-            let historico = JSON.parse(localStorage.getItem('historico')) || [];
-            historico.push(registro);
-            localStorage.setItem('historico', JSON.stringify(historico));
-            atualizarHistorico();
-            calcularTotais();
-            calcularDashboard();
-            atualizarGraficos();
-            limparCampos();
-        }
+    let historico = JSON.parse(localStorage.getItem('historico')) || [];
+    historico.push(registro);
+    localStorage.setItem('historico', JSON.stringify(historico));
+    atualizarHistorico();
+    calcularTotais();
+    calcularDashboard();
+    atualizarGraficos();
+    limparCampos();
+}
+
+function editarRegistro(index) {
+    let historico = JSON.parse(localStorage.getItem('historico')) || [];
+    let registro = historico[index];
+
+    document.getElementById('data').value = registro.data.split('/').reverse().join('-');
+    document.getElementById('ganhos').value = registro.ganhos;
+    document.getElementById('valorCombustivel').value = registro.combustivel; 
+    document.getElementById('consumoPorKm').value = registro.consumoPorKm; // Carregando corretamente o consumo por km
+    document.getElementById('kmRodado').value = registro.kmRodado;
+    document.getElementById('manutencao').value = registro.manutencao;
+
+    deletarRegistro(index);
+}
+
+document.getElementById('metaGanhos').addEventListener('change', atualizarMeta);
+
+function atualizarMeta() {
+    let meta = parseFloat(document.getElementById('metaGanhos').value);
+    if (!isNaN(meta)) {
+        localStorage.setItem('metaGanhos', meta);
+        calcularDashboard();
+        atualizarGraficos();
+    }
+}
 
         function atualizarHistorico() {
             let historico = JSON.parse(localStorage.getItem('historico')) || [];
