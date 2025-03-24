@@ -126,6 +126,13 @@
         <label for="metaGanhos">Meta de Ganhos (R$):</label>
         <input type="number" id="metaGanhos" placeholder="Digite sua meta">
 
+        <!-- Novos campos para custos adicionais -->
+        <label for="custoOutros">Custo com Outros (R$):</label>
+        <input type="number" id="custoOutros" placeholder="Digite o custo com outros">
+
+        <label for="descricaoCustoOutros">Descrição do Custo com Outros:</label>
+        <input type="text" id="descricaoCustoOutros" placeholder="Digite uma descrição">
+
         <button onclick="salvarDados()">Salvar</button>
         <button onclick="resetarDados()">Resetar Tudo</button>
         <button id="exportPDFBtn" onclick="exportarPDF()">Exportar como PDF</button>
@@ -150,6 +157,7 @@
                     <th>KM Rodado</th>
                     <th>Valor Pago por KM (R$)</th>
                     <th>Manutenção</th>
+                    <th>Custo com Outros</th>
                     <th>Lucro Líquido</th>
                     <th>Ações</th>
                 </tr>
@@ -168,6 +176,10 @@
                     <tr>
                         <td>Total de Gastos com Combustível (R$):</td>
                         <td><span id="totalCombustivel">0.00</span></td>
+                    </tr>
+                    <tr>
+                        <td>Total de Gastos com Outros (R$):</td>
+                        <td><span id="totalOutros">0.00</span></td>
                     </tr>
                     <tr>
                         <td>Total de KM Rodado:</td>
@@ -244,6 +256,10 @@
             let manutencao = parseFloat(document.getElementById('manutencao').value) || 0;
             let metaGanhos = parseFloat(document.getElementById('metaGanhos').value) || 0;
 
+            // Novos dados
+            let custoOutros = parseFloat(document.getElementById('custoOutros').value) || 0;
+            let descricaoCustoOutros = document.getElementById('descricaoCustoOutros').value || "";
+
             if (!dataInput) {
                 alert("Por favor, selecione uma data.");
                 return;
@@ -252,7 +268,7 @@
             // Calculando o gasto com combustível de acordo com a fórmula corrigida
             let gastoCombustivel = (valorCombustivel / consumoPorKm) * kmRodado; 
             let manutencaoValor = (manutencao / 100) * ganhos;
-            let lucroLiquido = ganhos - gastoCombustivel - manutencaoValor;
+            let lucroLiquido = ganhos - gastoCombustivel - manutencaoValor - custoOutros;
 
             let registro = {
                 data,
@@ -263,6 +279,8 @@
                 kmRodado: kmRodado.toFixed(2),
                 manutencao: manutencao.toFixed(2),
                 manutencaoValor: manutencaoValor.toFixed(2),
+                custoOutros: custoOutros.toFixed(2),
+                descricaoCustoOutros,
                 lucroLiquido: lucroLiquido.toFixed(2),
                 valorPorKm: kmRodado > 0 ? (ganhos / kmRodado).toFixed(2) : '0.00' // Calculando o valor pago por km
             };
@@ -297,6 +315,7 @@
                 <td>${registro.kmRodado} km</td>
                 <td>R$ ${registro.valorPorKm}</td>
                 <td>${registro.manutencao}% (R$ ${registro.manutencaoValor})</td>
+                <td>R$ ${registro.custoOutros} (${registro.descricaoCustoOutros})</td>
                 <td>R$ ${registro.lucroLiquido}</td>
                 <td>
                     <button onclick="editarRegistro(${index})">Editar</button>
@@ -321,6 +340,7 @@
             let totalCombustivel = 0;
             let totalKmRodado = 0;
             let totalManutencao = 0;
+            let totalOutros = 0;
             let totalLucro = 0;
 
             const ano = parseInt(document.getElementById('filtrarAno').value);
@@ -333,6 +353,7 @@
             registrosFiltrados.forEach(registro => {
                 totalGanhos += parseFloat(registro.ganhos || 0);
                 totalCombustivel += parseFloat(registro.combustivel || 0);
+                totalOutros += parseFloat(registro.custoOutros || 0);
                 totalKmRodado += parseFloat(registro.kmRodado || 0);
 
                 // Certifique-se de que o cálculo está correto
@@ -344,6 +365,7 @@
 
             document.getElementById('totalGanhos').innerText = totalGanhos.toFixed(2);
             document.getElementById('totalCombustivel').innerText = totalCombustivel.toFixed(2);
+            document.getElementById('totalOutros').innerText = totalOutros.toFixed(2);
             document.getElementById('totalKmRodado').innerText = totalKmRodado.toFixed(2);
             document.getElementById('valorPorKm').innerText = totalKmRodado ? (totalGanhos / totalKmRodado).toFixed(2) : '0.00';
             document.getElementById('totalManutencao').innerText = totalManutencao.toFixed(2);
@@ -365,7 +387,7 @@
 
             registrosFiltrados.forEach(registro => {
                 totalGanhos += parseFloat(registro.ganhos);
-                gastosMensais += parseFloat(registro.combustivel);
+                gastosMensais += parseFloat(registro.combustivel) + parseFloat(registro.custoOutros);
             });
 
             document.getElementById('progressoMeta').innerText = `${totalGanhos.toFixed(2)} / ${metaGanhos.toFixed(2)}`;
@@ -375,6 +397,7 @@
         function atualizarGraficos() {
             let totalGanhos = parseFloat(document.getElementById('totalGanhos').innerText) || 0;
             let totalGastos = parseFloat(document.getElementById('totalCombustivel').innerText) || 0;
+            let totalOutros = parseFloat(document.getElementById('totalOutros').innerText) || 0;
             let metaGanhos = parseFloat(localStorage.getItem('metaGanhos')) || 0;
 
             // Gráfico Circular
@@ -385,13 +408,14 @@
             myChart1 = new Chart(ctx1, {
                 type: 'pie',
                 data: {
-                    labels: ['Ganhos', 'Gastos'],
+                    labels: ['Ganhos', 'Gastos com Combustível', 'Gastos com Outros'],
                     datasets: [{
                         label: 'Distribuição Financeira',
-                        data: [totalGanhos, totalGastos],
+                        data: [totalGanhos, totalGastos, totalOutros],
                         backgroundColor: [
                             'rgba(46, 204, 113, 0.6)',
                             'rgba(231, 76, 60, 0.6)',
+                            'rgba(52, 152, 219, 0.6)',
                         ],
                     }]
                 },
@@ -404,7 +428,7 @@
                                 label: function (context) {
                                     let label = context.label || '';
                                     if (context.parsed > 0) {
-                                        label += ': R$ ' + context.parsed.toFixed(2) + ' (' + ((context.parsed / (totalGanhos + totalGastos)) * 100).toFixed(1) + '%)';
+                                        label += ': R$ ' + context.parsed.toFixed(2) + ' (' + ((context.parsed / (totalGanhos + totalGastos + totalOutros)) * 100).toFixed(1) + '%)';
                                     }
                                     return label;
                                 }
@@ -461,6 +485,8 @@
             document.getElementById('kmFinal').value = '';
             document.getElementById('manutencao').value = '';
             document.getElementById('metaGanhos').value = '';
+            document.getElementById('custoOutros').value = '';
+            document.getElementById('descricaoCustoOutros').value = '';
         }
 
         function resetarDados() {
@@ -495,6 +521,8 @@
             document.getElementById('kmInicial').value = registro.kmInicial; // Adicione esta linha
             document.getElementById('kmFinal').value = registro.kmFinal; // Adicione esta linha
             document.getElementById('manutencao').value = registro.manutencao;
+            document.getElementById('custoOutros').value = registro.custoOutros; // Adicione esta linha
+            document.getElementById('descricaoCustoOutros').value = registro.descricaoCustoOutros; // Adicione esta linha
 
             deletarRegistro(index);
         }
@@ -529,6 +557,7 @@
             let metaGanhos = parseFloat(localStorage.getItem('metaGanhos')) || 0;
             let totalGanhos = parseFloat(document.getElementById('totalGanhos').innerText) || 0;
             let totalCombustivel = parseFloat(document.getElementById('totalCombustivel').innerText) || 0;
+            let totalOutros = parseFloat(document.getElementById('totalOutros').innerText) || 0;
             let totalLucro = parseFloat(document.getElementById('totalLucro').innerText) || 0;
             let totalKmRodado = parseFloat(document.getElementById('totalKmRodado').innerText) || 0;
             let valorPagoPorKmTotal = totalKmRodado ? (totalGanhos / totalKmRodado).toFixed(2) : '0.00';
@@ -536,25 +565,26 @@
             // Informações gerais no PDF
             doc.text(`Meta de Ganhos: R$ ${metaGanhos.toFixed(2)}`, 10, 20);
             doc.text(`Total de Ganhos: R$ ${totalGanhos.toFixed(2)}`, 10, 30);
-            doc.text(`Total de Gastos: R$ ${totalCombustivel.toFixed(2)}`, 10, 40);
-            doc.text(`Lucro Líquido Total: R$ ${totalLucro.toFixed(2)}`, 10, 50);
-            doc.text(`Valor Total Pago por KM: R$ ${valorPagoPorKmTotal}`, 10, 60);
-            doc.text("", 10, 70); // Adicionando espaço em branco
+            doc.text(`Total de Gastos com Combustível: R$ ${totalCombustivel.toFixed(2)}`, 10, 40);
+            doc.text(`Total de Gastos com Outros: R$ ${totalOutros.toFixed(2)}`, 10, 50);
+            doc.text(`Lucro Líquido Total: R$ ${totalLucro.toFixed(2)}`, 10, 60);
+            doc.text(`Valor Total Pago por KM: R$ ${valorPagoPorKmTotal}`, 10, 70);
+            doc.text("", 10, 80); // Adicionando espaço em branco
 
             // Tabela do Histórico de Ganhos
-            doc.text("Histórico de Ganhos", 10, 80);
+            doc.text("Histórico de Ganhos", 10, 90);
             const historico = JSON.parse(localStorage.getItem('historico')) || [];
-            let offsetY = 90;
+            let offsetY = 100;
 
             // Cabeçalhos da tabela
-            const headers = ["Data", "Ganhos", "Combustível", "KM Rodado", "Valor Pago/KM", "Manutenção", "Lucro"];
+            const headers = ["Data", "Ganhos", "Combustível", "KM Rodado", "Valor Pago/KM", "Manutenção", "Custo com Outros", "Lucro"];
             const colWidth = 25; // Largura da coluna
             const startX = 10; // Posição inicial do eixo X
 
             // Adicionando cabeçalhos centralizados
             headers.forEach((header, index) => {
                 const x = startX + (index * colWidth);
-                doc.text(header, x + (colWidth / 2), offsetY, { align: "center" }); // Cabeçalho centralizado
+                doc.text(header, x + (colWidth / 2), offsetY, { align: "center" });
             });
 
             // Desenhando o retângulo para os cabeçalhos
@@ -566,15 +596,16 @@
                 const y = offsetY; // Posição Y da linha atual
                 
                 // Alinhando as informações centralizadamente
-                doc.text(registro.data, startX + (0.5 * colWidth), y + 4, { align: "center" }); // Offset para centralizar verticalmente
+                doc.text(registro.data, startX + (0.5 * colWidth), y + 4, { align: "center" });
                 doc.text(`R$ ${registro.ganhos}`, startX + (1.5 * colWidth), y + 4, { align: "center" });
                 doc.text(`R$ ${registro.combustivel}`, startX + (2.5 * colWidth), y + 4, { align: "center" });
                 doc.text(`${registro.kmRodado} km`, startX + (3.5 * colWidth), y + 4, { align: "center" });
                 doc.text(`R$ ${registro.valorPorKm}`, startX + (4.5 * colWidth), y + 4, { align: "center" });
-                doc.text(`R$ ${registro.manutencaoValor}`, startX + (5.5 * colWidth), y + 4, { align: "center" });
-                doc.text(`R$ ${registro.lucroLiquido}`, startX + (6.5 * colWidth), y + 4, { align: "center" });
+                doc.text(`${registro.manutencao}% (R$ ${registro.manutencaoValor})`, startX + (5.5 * colWidth), y + 4, { align: "center" });
+                doc.text(`R$ ${registro.custoOutros} (${registro.descricaoCustoOutros})`, startX + (6.5 * colWidth), y + 4, { align: "center" });
+                doc.text(`R$ ${registro.lucroLiquido}`, startX + (7.5 * colWidth), y + 4, { align: "center" });
 
-                // Desenhando o retângulo de cada linha após o texto, para evitar sobreposição
+                // Desenhando o retângulo de cada linha após o texto.
                 doc.rect(startX, y - 5, colWidth * headers.length, 10); // Linha para todas as células
 
                 offsetY += 10; // Ajustando a altura entre as linhas
