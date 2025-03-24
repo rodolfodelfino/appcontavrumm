@@ -114,8 +114,11 @@
         <label for="consumoPorKm">Consumo do Carro (litros/km):</label>
         <input type="number" id="consumoPorKm" placeholder="Digite o consumo por km">
 
-        <label for="kmRodado">KM Rodado:</label>
-        <input type="number" id="kmRodado" placeholder="Digite os quilômetros rodados">
+        <label for="kmInicial">KM Inicial:</label>
+        <input type="number" id="kmInicial" placeholder="Digite o KM inicial">
+
+        <label for="kmFinal">KM Final:</label>
+        <input type="number" id="kmFinal" placeholder="Digite o KM final">
 
         <label for="manutencao">Percentual para Manutenção (%):</label>
         <input type="number" id="manutencao" placeholder="Ex: 10">
@@ -235,7 +238,9 @@
             let ganhos = parseFloat(document.getElementById('ganhos').value) || 0;
             let valorCombustivel = parseFloat(document.getElementById('valorCombustivel').value) || 0;
             let consumoPorKm = parseFloat(document.getElementById('consumoPorKm').value) || 0;
-            let kmRodado = parseFloat(document.getElementById('kmRodado').value) || 0;
+            let kmInicial = parseFloat(document.getElementById('kmInicial').value) || 0;
+            let kmFinal = parseFloat(document.getElementById('kmFinal').value) || 0;
+            let kmRodado = kmFinal - kmInicial; // Cálculo do KM rodado
             let manutencao = parseFloat(document.getElementById('manutencao').value) || 0;
             let metaGanhos = parseFloat(document.getElementById('metaGanhos').value) || 0;
 
@@ -452,7 +457,8 @@
             document.getElementById('ganhos').value = '';
             document.getElementById('valorCombustivel').value = '';
             document.getElementById('consumoPorKm').value = '';
-            document.getElementById('kmRodado').value = '';
+            document.getElementById('kmInicial').value = '';
+            document.getElementById('kmFinal').value = '';
             document.getElementById('manutencao').value = '';
             document.getElementById('metaGanhos').value = '';
         }
@@ -486,7 +492,8 @@
             document.getElementById('ganhos').value = registro.ganhos;
             document.getElementById('valorCombustivel').value = registro.valorCombustivel; // Adicione esta linha
             document.getElementById('consumoPorKm').value = registro.consumoPorKm; // Adicione esta linha
-            document.getElementById('kmRodado').value = registro.kmRodado;
+            document.getElementById('kmInicial').value = registro.kmInicial; // Adicione esta linha
+            document.getElementById('kmFinal').value = registro.kmFinal; // Adicione esta linha
             document.getElementById('manutencao').value = registro.manutencao;
 
             deletarRegistro(index);
